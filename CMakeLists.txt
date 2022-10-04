@@ -32,4 +32,4 @@ add_custom_target(
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_executable(Z_DUMMY_TARGET ${SRC_LIST})
+add_executable(Z_DUMMY_TARGET ${SRC_LIST} src/led.c src/led.h src/common.c src/common.h)

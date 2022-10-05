@@ -5,7 +5,6 @@
 #include "led.h"
 
 #include <8051.h>
-#include <math.h>
 
 #include "common.h"
 

@@ -14,7 +14,12 @@ project("mcu-stc89" C CXX)
 
 include(CMakeListsPrivate.txt)
 
+# Include dirs for standard library or external library,
+# this is not necessary for compilation, but makes it friendly to reference the header and vars in CLion.
+# 8051.h
 include_directories("~/.platformio/packages/toolchain-sdcc/share/sdcc/include/mcs51")
+# c standard library
+include_directories("/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include")
 
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/CMakeListsUser.txt)
 include(CMakeListsUser.txt)
@@ -33,3 +38,5 @@ add_custom_target(
 )
 
 add_executable(Z_DUMMY_TARGET ${SRC_LIST} src/led.c src/led.h src/common.c src/common.h)
+
+target_link_libraries(Z_DUMMY_TARGET m)

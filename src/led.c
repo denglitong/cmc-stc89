@@ -43,7 +43,7 @@ _Noreturn void flash_single_led() {
 _Noreturn void flash_serial_leds() {
   // initialize leds, all turn off
   LED_LINE = 0xff;
-  unsigned char i = 0;
+  short i = 0;
   while (1) {
     for (i = 0; i < LED_SIZE; ++i) {
       // turn on the i-th led from low-high

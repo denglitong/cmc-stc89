@@ -5,6 +5,7 @@
 #include "led.h"
 
 #include <8051.h>
+#include <math.h>
 
 #include "common.h"
 
@@ -42,8 +43,9 @@ _Noreturn void flash_single_led() {
 _Noreturn void flash_serial_leds() {
   // initialize leds, all turn off
   LED_LINE = 0xff;
+  unsigned char i = 0;
   while (1) {
-    for (int i = 0; i < LED_SIZE; ++i) {
+    for (i = 0; i < LED_SIZE; ++i) {
       // turn on the i-th led from low-high
       LED_LINE ^= 0x01 << i;
       delay_ms(200);
@@ -51,7 +53,7 @@ _Noreturn void flash_serial_leds() {
       LED_LINE = 0xff;
       delay_ms(300);
     }
-    for (int i = LED_SIZE - 1; i >= 0; --i) {
+    for (i = LED_SIZE - 1; i >= 0; --i) {
       // turn on the i-th led from high-low
       LED_LINE ^= 0x01 << i;
       delay_ms(200);

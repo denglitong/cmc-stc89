@@ -25,4 +25,4 @@
 - 1 个 UART
 - 8 个中断源
 
-一个 byte 是 8bit，一个bit控制一个 IO 口，byte 控制所有的 IO 口
+一个 byte 是 8 bit，一个bit控制一个 IO 口，byte 控制所有的 IO 口。

@@ -10,7 +10,7 @@ set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_C_COMPILER_WORKS 1)
 set(CMAKE_CXX_COMPILER_WORKS 1)
 
-project("cmc-stc89" C CXX)
+project("mcu-stc89" C CXX)
 
 include(CMakeListsPrivate.txt)
 

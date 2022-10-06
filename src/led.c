@@ -18,13 +18,20 @@
 #define ADDR_3 P1_3
 #define EN_LED P1_4
 
+// 教学板子 LED_SINGLE 总开关
 void turn_on_master_switch() {
-  // 教学板子 LED_SINGLE 总开关
-  ADDR_0 = 0;
-  ADDR_1 = 1;
+  // 74HC138 芯片，即 38 译码器，
+  // LED 总开关对应的引脚为 74HC138 的输出口 LEDS6
+
+  // 74HC138 芯片 的使能引脚，
+  // G1 高电平 G2 低电平，才能启动 74HC138 芯片的 3-8 译码电路
+  ADDR_3 = 1;  // G1 高电平
+  EN_LED = 0;  // G2低电平（G2A, G2B）
+
+  // 110 LEDS6 为低电平，三极管导通，LED 总开发打开
   ADDR_2 = 1;
-  ADDR_3 = 1;
-  EN_LED = 0;
+  ADDR_1 = 1;
+  ADDR_0 = 0;
 }
 
 _Noreturn void flash_single_led() {
@@ -44,21 +51,27 @@ _Noreturn void flash_serial_leds() {
   LED_LINE = 0xff;
   short i = 0;
   while (1) {
+    for (i = 0; i < 2; ++i) {
+      LED_LINE = 0x00;
+      delay_ms(200);
+      LED_LINE = 0xff;
+      delay_ms(300);
+    }
     for (i = 0; i < LED_SIZE; ++i) {
       // turn on the i-th led from low-high
       LED_LINE ^= 0x01 << i;
-      delay_ms(200);
+      delay_ms(100);
       // turn off
       LED_LINE = 0xff;
-      delay_ms(300);
+      delay_ms(100);
     }
     for (i = LED_SIZE - 1; i >= 0; --i) {
       // turn on the i-th led from high-low
       LED_LINE ^= 0x01 << i;
-      delay_ms(200);
+      delay_ms(100);
       // turn off
       LED_LINE = 0xff;
-      delay_ms(300);
+      delay_ms(100);
     }
   }
 }

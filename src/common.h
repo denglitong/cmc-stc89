@@ -7,4 +7,8 @@
 
 void delay_ms(unsigned int s);
 
+void delay_ms_imprecise(unsigned int s);
+
+void delay_ms_precise(unsigned int s);
+
 #endif  // CMC_STC89_COMMON_H

@@ -12,12 +12,6 @@
 #define LED_LINE P0
 #define LED_SINGLE P0_0
 
-#define ADDR_0 P1_0
-#define ADDR_1 P1_1
-#define ADDR_2 P1_2
-#define ADDR_3 P1_3
-#define EN_LED P1_4
-
 // 教学板子 LED_SINGLE 总开关
 void turn_on_master_switch() {
   // 74HC138 芯片，即 38 译码器，

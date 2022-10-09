@@ -177,9 +177,9 @@ _Noreturn void turn_on_tube_with_interrupt(unsigned int interrupt_millis) {
   }
 }
 
-// 中断函数 函数原型需要加上 __interrupt(1) 里面的数字对应不同的中断
+// 中断函数 函数原型需要加上 __interrupt(x)，x 对应不同中断
 // 中断函数不需要调用，达到中断时自动进入
-// 定时器 T0 产生溢出时触发一个中断
+// 定时器 T0 产生溢出时触发一个 T0 中断，对应函数标号为 1
 void InterruptTime0() __interrupt(1) {
   // setup TH0 TL0 initial value, each interrupt(Timer0 overflow) will pass 1ms
   TH0 = 0xFC;

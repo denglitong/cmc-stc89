@@ -34,9 +34,9 @@ void delay_ms_imprecise(unsigned int s) {
  * 需要让计数器完成 921 次机器周期，以取得 1ms 的系统时钟
  * TH0 TL0 16bits 计数范围 2^16 = 65536
  * 设置 TH0 TL0 初始位位 65536-921=0xFC67，
- * 则当 TL0 溢出时即完成了一次 0xFC67~65536 的机器周期循环，即是 1ms
+ * 则当 Timer0 溢出时即完成了一次 0xFC67~65536 的机器周期循环，即是 1ms
  * 所以 TH0 TL0 初始位设置为 TH0=0xFC TL0=0x67
- * 判断 TL0 是否使用 TF0 寄存器位
+ * 判断 Timer0 是否溢出使用 TF0 寄存器位
  * @param s
  */
 void delay_ms_precise(unsigned int s) {

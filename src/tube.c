@@ -9,6 +9,23 @@
 #include "common.h"
 
 #define TUBE_SIZE 6
+#define DOT 10
+
+unsigned long DIGIT = 0;
+unsigned char TUBE_IDX = 0;
+unsigned int INTERRUPT_COUNT = 0;
+unsigned char INTERRUPT_FLAG = 0;
+unsigned int INTERRUPT_MILLIS = 0;
+
+unsigned char DIGIT_SEG_BUFF[] = {0b111111,  0b110,     0b1011011, 0b1001111,
+                                  0b1100110, 0b1101101, 0b1111101, 0b111,
+                                  0b1111111, 0b1101111};
+
+unsigned char LED_BUFF[] = {
+    0xff ^ 0b111111,  0xff ^ 0b110,     0xff ^ 0b1011011, 0xff ^ 0b1001111,
+    0xff ^ 0b1100110, 0xff ^ 0b1101101, 0xff ^ 0b1111101, 0xff ^ 0b111,
+    0xff ^ 0b1111111, 0xff ^ 0b1101111,
+};
 
 // i: 0 - (TUBE_SIZE-1)
 void enable_tube(unsigned char i) {
@@ -28,8 +45,6 @@ void turn_on_all_segs() { P0 = 0x00; }
 void turn_off_all_segs() { P0 = 0xff; }
 
 unsigned char seg(unsigned char i) { return 0x01 << i; }
-
-#define DOT 10
 
 /**
  * P0 = 0xff ^ digit_seg(i) shows number i in digital tube
@@ -77,24 +92,45 @@ unsigned char digit_seg(unsigned char i) {
   }
 }
 
-unsigned char DIGIT_SEG_BUFF[] = {0b111111,  0b110,     0b1011011, 0b1001111,
-                                  0b1100110, 0b1101101, 0b1111101, 0b111,
-                                  0b1111111, 0b1101111};
-
-unsigned char LED_BUFF[] = {
-    0xff ^ 0b111111,  0xff ^ 0b110,     0xff ^ 0b1011011, 0xff ^ 0b1001111,
-    0xff ^ 0b1100110, 0xff ^ 0b1101101, 0xff ^ 0b1111101, 0xff ^ 0b111,
-    0xff ^ 0b1111111, 0xff ^ 0b1101111,
-};
-
 void show_digit(unsigned char i) {
   // P0 = 0xff ^ digit_seg(i);
   // use array buffer to accelerate since the value is not changed in run-time.
   P0 = LED_BUFF[i];
 }
 
-unsigned int digit = 0;
-unsigned char tube_idx = 0;
+void show_digit_on_all_tubes() {
+  turn_off_all_segs();
+  switch (TUBE_IDX) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+      enable_tube(TUBE_IDX);
+      show_digit((DIGIT / pow(10, TUBE_IDX)) % 10);
+      TUBE_IDX++;
+      break;
+    case 7:
+      enable_tube(TUBE_IDX);
+      show_digit((DIGIT / pow(10, TUBE_IDX)) % 10);
+      TUBE_IDX = 0;
+      break;
+  }
+
+  // 下面这个 for 循环在单片机上的 0 位数码管不闪烁，用上面的 switch 循环可以,
+  // 具体原因未知...
+
+  // for (unsigned char TUBE_IDX = 0; TUBE_IDX < TUBE_SIZE; TUBE_IDX++) {
+  //   // 依次连通各个数码管，一次只能点亮一个数码管
+  //   enable_tube(TUBE_IDX);
+  //   // 在数码管上展示数字 DIGIT 运算需要时间，
+  //   // 引入中断机制，来避免算术运算时影响间隔时间而产生在LED上的交叉影响
+  //   // 单片机执行的时候也需要考虑到语句的耗时周期
+  //   show_digit((DIGIT / pow(10, TUBE_IDX)) % 10);
+  // }
+}
 
 unsigned int pow(unsigned int x, unsigned int y) {
   unsigned int res = 1;
@@ -104,41 +140,42 @@ unsigned int pow(unsigned int x, unsigned int y) {
   return res;
 }
 
-void show_digit_on_all_tubes() {
-  turn_off_all_segs();
-  switch (tube_idx) {
-    case 0:
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-    case 6:
-      enable_tube(tube_idx);
-      show_digit((digit / pow(10, tube_idx)) % 10);
-      tube_idx++;
-      break;
-    case 7:
-      enable_tube(tube_idx);
-      show_digit((digit / pow(10, tube_idx)) % 10);
-      tube_idx = 0;
-      break;
+_Noreturn void turn_on_tube_with_func_pointer() {
+  // 连通 74hc138 引脚使能 3-8 译码器输出以连通各个数码管
+  enable_74hc138();
+  while (1) {
+    run_in_every_ms(100, &show_digit_on_all_tubes);
+    DIGIT++;
+    if (DIGIT >= 999999) {
+      DIGIT = 0;
+    }
   }
-
-  // 下面这个 for 循环在单片机上的 0 位数码管不闪烁，用上面的 switch 循环可以,
-  // 具体原因未知...
-
-  // for (unsigned char tube_idx = 0; tube_idx < TUBE_SIZE; tube_idx++) {
-  //   // 依次连通各个数码管，一次只能点亮一个数码管
-  //   enable_tube(tube_idx);
-  //   // 在数码管上展示数字 digit 运算需要时间，
-  //   // 引入中断机制，来避免算术运算时影响间隔时间而产生在LED上的交叉影响
-  //   // 单片机执行的时候也需要考虑到语句的耗时周期
-  //   show_digit((digit / pow(10, tube_idx)) % 10);
-  // }
 }
 
-unsigned int interrupt_count = 0, interrupt_flag = 0;
+_Noreturn void turn_on_tube_with_interrupt(unsigned int interrupt_millis) {
+  enable_74hc138();
+
+  EA = 1;   // enable global interrupt
+  ET0 = 1;  // enable Timer0 interrupt
+
+  // setup T0_M1 = 0, T0_M0 = 1 (Timer0 mode TH0-TL0 16 bits timer)
+  TMOD = 0x01;
+  // setup TH0 TL0 initial value
+  TH0 = 0xFC;
+  TL0 = 0x67;
+  TR0 = 1;  // start/enable Timer0
+
+  INTERRUPT_MILLIS = interrupt_millis;
+  while (1) {
+    if (INTERRUPT_FLAG) {
+      INTERRUPT_FLAG = 0;
+      DIGIT++;
+      if (DIGIT >= 999999) {
+        DIGIT = 0;
+      }
+    }
+  }
+}
 
 // 中断函数 函数原型需要加上 __interrupt(1) 里面的数字对应不同的中断
 // 中断函数不需要调用，达到中断时自动进入
@@ -148,52 +185,15 @@ void InterruptTime0() __interrupt(1) {
   TH0 = 0xFC;
   TL0 = 0x67;
 
-  interrupt_count++;
-  if (interrupt_count >= 1000) {  // 1ms * 1000 = 1s
-    interrupt_count = 0;
-    interrupt_flag = 1;
+  INTERRUPT_COUNT++;
+  if (INTERRUPT_COUNT >= INTERRUPT_MILLIS) {  // 1ms * INTERRUPT_MILLIS
+    INTERRUPT_COUNT = 0;
+    INTERRUPT_FLAG = 1;
   }
-
   show_digit_on_all_tubes();
-}
-
-_Noreturn void turn_on_tube_with_interrupt() {
-  // setup T0_M1 = 0, T0_M0 = 1 (Timer0 mode TH0-TL0 16 bits timer)
-  TMOD = 0x01;
-  // setup TH0 TL0 initial value
-  TH0 = 0xFC;
-  TL0 = 0x67;
-  // start/enable Timer0
-  TR0 = 1;
-
-  // enable interrupt Timer0
-  ET0 = 1;
-  TR0 = 1;
-
-  while (1) {
-    if (interrupt_flag) {
-      interrupt_flag = 0;
-      digit++;
-      if (digit >= 999999) {
-        digit = 0;
-      }
-    }
-  }
-}
-
-_Noreturn void turn_on_tube_with_func_pointer() {
-  // 连通 74hc138 引脚使能 3-8 译码器输出以连通各个数码管
-  enable_74hc138();
-  while (1) {
-    run_in_every_ms(100, &show_digit_on_all_tubes);
-    digit++;
-    if (digit >= 999999) {
-      digit = 0;
-    }
-  }
 }
 
 _Noreturn void turn_on_tube() {
   // turn_on_tube_with_func_pointer();
-  turn_on_tube_with_interrupt();
+  turn_on_tube_with_interrupt(100);
 }

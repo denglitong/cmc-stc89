@@ -6,6 +6,12 @@
 
 #include <8051.h>
 
+void enable_74hc138() {
+  // 74HC138 芯片的使能引脚，G1 高电平 G2 低电平 才能启动74HC138的 3-8 译码电路
+  ADDR_3 = 1;  // G1 高电平
+  EN_LED = 0;  // G2低电平（G2A, G2B）
+}
+
 void delay_ms(unsigned int s) {
   // delay_ms_imprecise(s);
   delay_ms_precise(s);
@@ -48,6 +54,44 @@ void delay_ms_precise(unsigned int s) {
   while (s--) {
     while (1) {
       // if Timer0 overflow (has passed 1ms)
+      if (TF0) {
+        // 软件复位
+        TF0 = 0;
+        TH0 = 0xFC;
+        TL0 = 0x67;
+        break;
+      }
+    }
+  }
+
+  // stop/disable Timer0
+  TR0 = 0;
+}
+
+/**
+ * Run some fun for total_millis milliseconds, the fun will be called only once
+ * in the beginning of each single millisecond .
+ * @param total_millis milliseconds to run
+ * @param fun the fun to call within these total_millis milliseconds
+ */
+void run_in_every_ms(unsigned int total_millis, VoidFun *fun) {
+  // setup T0_M1 = 0, T0_M0 = 1 (Timer0 mode TH0-TL0 16 bits timer)
+  TMOD = 0x01;
+
+  // setup TH0 TL0 initial value
+  TH0 = 0xFC;
+  TL0 = 0x67;
+
+  // start/enable Timer0
+  TR0 = 1;
+
+  // delay total_millis milliseconds
+  while (total_millis--) {
+    // call fun()
+    fun();
+    while (1) {
+      // if Timer0 overflow (has passed 1ms), will also trigger a Timer0
+      // interrupt
       if (TF0) {
         // 软件复位
         TF0 = 0;

@@ -8,4 +8,6 @@
 
 _Noreturn void turn_on_tube();
 
+unsigned char digit_seg(unsigned char i);
+
 #endif  // MCU_STC89_TUBE_H

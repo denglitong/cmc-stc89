@@ -4,6 +4,8 @@
 
 #include "led_matrix.h"
 
+#include <stdint.h>
+
 #include "common.h"
 #include "tube.h"
 
@@ -14,6 +16,96 @@ extern unsigned int INTERRUPT_COUNT;
 
 const unsigned char MATRIX_ROW = 8;
 const unsigned char MATRIX_COL = 8;
+
+unsigned char HEART_IMAGE_IDX = 0;
+unsigned char DIGIT_IMAGE_IDX = 0;
+unsigned char SHOW_IMAGE_ROUND = 0;
+
+const unsigned char HEART_IMAGE[] = {0b00000000, 0b01100110, 0b11111111,
+                                     0b11111111, 0b01111110, 0b00111100,
+                                     0b00011000, 0b00000000};
+
+const unsigned char IMAGES[][8] = {
+    // heart chart
+    {0b00000000, 0b01100110, 0b11111111, 0b11111111, 0b01111110, 0b00111100,
+     0b00011000, 0b00000000},
+    // digit charts 1234567890
+    {0b00000000, 0b00011000, 0b00011000, 0b00111000, 0b00011000, 0b00011000,
+     0b00011000, 0b01111110},
+    {0b00000000, 0b00111100, 0b01100110, 0b00000110, 0b00001100, 0b00110000,
+     0b01100000, 0b01111110},
+    {0b00000000, 0b00111100, 0b01100110, 0b00000110, 0b00011100, 0b00000110,
+     0b01100110, 0b00111100},
+    {0b00000000, 0b00001100, 0b00011100, 0b00101100, 0b01001100, 0b01111110,
+     0b00001100, 0b00001100},
+    {0b00000000, 0b01111110, 0b01100000, 0b01111100, 0b00000110, 0b00000110,
+     0b01100110, 0b00111100},
+    {0b00000000, 0b00111100, 0b01100110, 0b01100000, 0b01111100, 0b01100110,
+     0b01100110, 0b00111100},
+    {0b00000000, 0b01111110, 0b01100110, 0b00001100, 0b00001100, 0b00011000,
+     0b00011000, 0b00011000},
+    {0b00000000, 0b00111100, 0b01100110, 0b01100110, 0b00111100, 0b01100110,
+     0b01100110, 0b00111100},
+    {0b00000000, 0b00111100, 0b01100110, 0b01100110, 0b00111110, 0b00000110,
+     0b01100110, 0b00111100},
+    {0b00000000, 0b00111100, 0b01100110, 0b01101110, 0b01110110, 0b01100110,
+     0b01100110, 0b00111100},
+    // letter charts
+    {0b00110000, 0b01111000, 0b11001100, 0b11001100, 0b11111100, 0b11001100,
+     0b11001100, 0b00000000},
+    {0b11111100, 0b01100110, 0b01100110, 0b01111100, 0b01100110, 0b01100110,
+     0b11111100, 0b00000000},
+    {0b00111100, 0b01100110, 0b11000000, 0b11000000, 0b11000000, 0b01100110,
+     0b00111100, 0b00000000},
+    {0b11111000, 0b01101100, 0b01100110, 0b01100110, 0b01100110, 0b01101100,
+     0b11111000, 0b00000000},
+    {0b11111110, 0b01100010, 0b01101000, 0b01111000, 0b01101000, 0b01100010,
+     0b11111110, 0b00000000},
+    {0b11111110, 0b01100010, 0b01101000, 0b01111000, 0b01101000, 0b01100000,
+     0b11110000, 0b00000000},
+    {0b00111100, 0b01100110, 0b11000000, 0b11000000, 0b11001110, 0b01100110,
+     0b00111110, 0b00000000},
+    {0b11001100, 0b11001100, 0b11001100, 0b11111100, 0b11001100, 0b11001100,
+     0b11001100, 0b00000000},
+    {0b01111000, 0b00110000, 0b00110000, 0b00110000, 0b00110000, 0b00110000,
+     0b01111000, 0b00000000},
+    {0b00011110, 0b00001100, 0b00001100, 0b00001100, 0b11001100, 0b11001100,
+     0b01111000, 0b00000000},
+    {0b11100110, 0b01100110, 0b01101100, 0b01111000, 0b01101100, 0b01100110,
+     0b11100110, 0b00000000},
+    {0b11110000, 0b01100000, 0b01100000, 0b01100000, 0b01100010, 0b01100110,
+     0b11111110, 0b00000000},
+    {0b11000110, 0b11101110, 0b11111110, 0b11111110, 0b11010110, 0b11000110,
+     0b11000110, 0b00000000},
+    {0b11000110, 0b11100110, 0b11110110, 0b11011110, 0b11001110, 0b11000110,
+     0b11000110, 0b00000000},
+    {0b00111000, 0b01101100, 0b11000110, 0b11000110, 0b11000110, 0b01101100,
+     0b00111000, 0b00000000},
+    {0b11111100, 0b01100110, 0b01100110, 0b01111100, 0b01100000, 0b01100000,
+     0b11110000, 0b00000000},
+    {0b01111000, 0b11001100, 0b11001100, 0b11001100, 0b11011100, 0b01111000,
+     0b00011100, 0b00000000},
+    {0b11111100, 0b01100110, 0b01100110, 0b01111100, 0b01101100, 0b01100110,
+     0b11100110, 0b00000000},
+    {0b01111000, 0b11001100, 0b11100000, 0b01110000, 0b00011100, 0b11001100,
+     0b01111000, 0b00000000},
+    {0b11111100, 0b10110100, 0b00110000, 0b00110000, 0b00110000, 0b00110000,
+     0b01111000, 0b00000000},
+    {0b11001100, 0b11001100, 0b11001100, 0b11001100, 0b11001100, 0b11001100,
+     0b11111100, 0b00000000},
+    {0b11001100, 0b11001100, 0b11001100, 0b11001100, 0b11001100, 0b01111000,
+     0b00110000, 0b00000000},
+    {0b11000110, 0b11000110, 0b11000110, 0b11010110, 0b11111110, 0b11101110,
+     0b11000110, 0b00000000},
+    {0b11000110, 0b11000110, 0b01101100, 0b00111000, 0b00111000, 0b01101100,
+     0b11000110, 0b00000000},
+    {0b11001100, 0b11001100, 0b11001100, 0b01111000, 0b00110000, 0b00110000,
+     0b01111000, 0b00000000},
+    {0b11111110, 0b11000110, 0b10001100, 0b00011000, 0b00110010, 0b01100110,
+     0b11111110, 0b00000000},
+};
+
+const unsigned char IMAGES_LEN = sizeof(IMAGES) / 8;
 
 void enable_u4_74hc138() {
   // U4 74HC138 enable
@@ -36,7 +128,7 @@ void enable_led_column(unsigned char col) {
   P0 ^= 1 << col;
 }
 
-void turn_off_led_matrix() { EN_LED = 1; }
+void turn_off_led_matrix() { P0 = 0xff; }
 
 _Noreturn void turn_on_led_matrix_normal() {
   enable_u4_74hc138();
@@ -96,22 +188,91 @@ _Noreturn void turn_on_led_matrix_with_interrupt(
 // 中断函数不需要调用，达到中断时自动进入
 // 定时器 T1 产生溢出时触发一个 T1 中断，对应函数标号为 3
 // NOTE: 中断函数需要在 header 文件中声明进行声明才能生效！
-void InterruptTime1() __interrupt(3) {
-  // setup TH0 TL0 initial value, each interrupt(Timer0 overflow) will pass 1ms
-  TH1 = 0xFC;
-  TL1 = 0x67;
+// void InterruptTime1() __interrupt(3) {
+// // setup TH0 TL0 initial value, each interrupt(Timer0 overflow) will pass
+// 1ms TH1 = 0xFC; TL1 = 0x67;
+//
+// INTERRUPT_COUNT++;
+// if (INTERRUPT_COUNT >= INTERRUPT_MILLIS) {  // 1ms * INTERRUPT_MILLIS
+//   INTERRUPT_COUNT = 0;
+//   INTERRUPT_FLAG = 1;
+// }
+//
+// enable_led_row(digit_row());
+// enable_led_column(digit_col());
+// }
 
-  INTERRUPT_COUNT++;
-  if (INTERRUPT_COUNT >= INTERRUPT_MILLIS) {  // 1ms * INTERRUPT_MILLIS
-    INTERRUPT_COUNT = 0;
-    INTERRUPT_FLAG = 1;
+unsigned char bit_revert(unsigned char a) {
+  unsigned char r = 0;
+  for (unsigned char i = 0; i < 8; ++i) {
+    r |= ((a & (1 << i)) >> i) << (7 - i);
   }
+  return r;
+}
 
-  enable_led_row(digit_row());
-  enable_led_column(digit_col());
+void show_heart_image() {
+  turn_off_led_matrix();
+  switch (HEART_IMAGE_IDX) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+      enable_led_row(HEART_IMAGE_IDX);
+      P0 = 0xFF ^ bit_revert(HEART_IMAGE[HEART_IMAGE_IDX]);
+      HEART_IMAGE_IDX++;
+      break;
+    case 7:
+      enable_led_row(HEART_IMAGE_IDX);
+      P0 = 0xFF ^ bit_revert(HEART_IMAGE[HEART_IMAGE_IDX]);
+      HEART_IMAGE_IDX = 0;
+      break;
+    default:
+      break;
+  }
+}
+
+void show_digit_image() {
+  turn_off_led_matrix();
+  switch (DIGIT_IMAGE_IDX) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+      enable_led_row(DIGIT_IMAGE_IDX);
+      P0 = 0xff ^ bit_revert(IMAGES[SHOW_IMAGE_ROUND][DIGIT_IMAGE_IDX]);
+      DIGIT_IMAGE_IDX++;
+      break;
+    case 7:
+      enable_led_row(DIGIT_IMAGE_IDX);
+      P0 = 0xff ^ bit_revert(IMAGES[SHOW_IMAGE_ROUND][DIGIT_IMAGE_IDX]);
+      DIGIT_IMAGE_IDX = 0;
+      break;
+  }
+}
+
+_Noreturn void show_image_on_led_matrix() {
+  enable_u4_74hc138();
+  P0 = 0xff;
+
+  while (1) {
+    run_in_every_ms(250, &show_digit_image);
+    turn_off_led_matrix();
+    delay_ms(250);
+    SHOW_IMAGE_ROUND++;
+    if (SHOW_IMAGE_ROUND >= IMAGES_LEN) {
+      SHOW_IMAGE_ROUND = 0;
+    }
+  }
 }
 
 _Noreturn void turn_on_led_matrix() {
   // turn_on_led_matrix_normal();
-  turn_on_led_matrix_with_interrupt(100);
+  // turn_on_led_matrix_with_interrupt(100);
+  show_image_on_led_matrix();
 }

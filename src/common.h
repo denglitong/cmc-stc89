@@ -5,6 +5,8 @@
 #ifndef CMC_STC89_COMMON_H
 #define CMC_STC89_COMMON_H
 
+#include <8051.h>
+
 #define ADDR_0 P1_0
 #define ADDR_1 P1_1
 #define ADDR_2 P1_2

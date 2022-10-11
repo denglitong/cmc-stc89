@@ -15,7 +15,7 @@
 
 typedef void(VoidFun)();
 
-void enable_74hc138();
+void enable_u3_74hc138();
 
 void delay_ms(unsigned int s);
 

@@ -142,7 +142,7 @@ unsigned int pow(unsigned int x, unsigned int y) {
 
 _Noreturn void turn_on_tube_with_func_pointer() {
   // 连通 74hc138 引脚使能 3-8 译码器输出以连通各个数码管
-  enable_74hc138();
+  enable_u3_74hc138();
   while (1) {
     run_in_every_ms(100, &show_digit_on_all_tubes);
     DIGIT++;
@@ -153,7 +153,7 @@ _Noreturn void turn_on_tube_with_func_pointer() {
 }
 
 _Noreturn void turn_on_tube_with_interrupt(unsigned int interrupt_millis) {
-  enable_74hc138();
+  enable_u3_74hc138();
 
   EA = 1;   // enable global interrupt
   ET0 = 1;  // enable Timer0 interrupt

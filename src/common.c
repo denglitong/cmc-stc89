@@ -6,7 +6,7 @@
 
 #include <8051.h>
 
-void enable_74hc138() {
+void enable_u3_74hc138() {
   // 74HC138 芯片的使能引脚，G1 高电平 G2 低电平 才能启动74HC138的 3-8 译码电路
   ADDR_3 = 1;  // G1 高电平
   EN_LED = 0;  // G2低电平（G2A, G2B）

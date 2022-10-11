@@ -19,7 +19,7 @@ const unsigned char MATRIX_COL = 8;
 
 unsigned char HEART_IMAGE_IDX = 0;
 unsigned char DIGIT_IMAGE_IDX = 0;
-unsigned char SHOW_IMAGE_ROUND = 0;
+unsigned short SHOW_IMAGE_ROUND = 0;
 
 const unsigned char HEART_IMAGE[] = {0b00000000, 0b01100110, 0b11111111,
                                      0b11111111, 0b01111110, 0b00111100,
@@ -253,6 +253,40 @@ void show_digit_image() {
       P0 = 0xff ^ bit_revert(IMAGES[SHOW_IMAGE_ROUND][DIGIT_IMAGE_IDX]);
       DIGIT_IMAGE_IDX = 0;
       break;
+    default:
+      break;
+  }
+}
+
+void show_digit_image_dynamic() {
+  turn_off_led_matrix();
+  unsigned char row = 0, col = 0;
+  switch (DIGIT_IMAGE_IDX) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+      // 动态显示的时候把整个二位数组打平为一维数组，则动态显示的问题就变成：
+      // 当前走了 n 个周期一共走过了多少个行，当前定位在二位数组的哪个 row 哪个
+      // col，在确定 row 时在走过的周期上再加上对应的 LED 行数
+      enable_led_row(DIGIT_IMAGE_IDX);
+      row = (SHOW_IMAGE_ROUND + DIGIT_IMAGE_IDX) / 8;
+      col = SHOW_IMAGE_ROUND + DIGIT_IMAGE_IDX - row * 8;
+      P0 = 0xff ^ bit_revert(IMAGES[row][col]);
+      DIGIT_IMAGE_IDX++;
+      break;
+    case 7:
+      enable_led_row(DIGIT_IMAGE_IDX);
+      row = (SHOW_IMAGE_ROUND + DIGIT_IMAGE_IDX) / 8;
+      col = SHOW_IMAGE_ROUND + DIGIT_IMAGE_IDX - row * 8;
+      P0 = 0xff ^ bit_revert(IMAGES[row][col]);
+      DIGIT_IMAGE_IDX = 0;
+      break;
+    default:
+      break;
   }
 }
 
@@ -261,11 +295,11 @@ _Noreturn void show_image_on_led_matrix() {
   P0 = 0xff;
 
   while (1) {
-    run_in_every_ms(250, &show_digit_image);
+    run_in_every_ms(100, &show_digit_image_dynamic);
     turn_off_led_matrix();
-    delay_ms(250);
+    delay_ms(10);
     SHOW_IMAGE_ROUND++;
-    if (SHOW_IMAGE_ROUND >= IMAGES_LEN) {
+    if (SHOW_IMAGE_ROUND >= 37 * 8) {
       SHOW_IMAGE_ROUND = 0;
     }
   }

@@ -25,7 +25,7 @@ const unsigned char HEART_IMAGE[] = {0b00000000, 0b01100110, 0b11111111,
                                      0b11111111, 0b01111110, 0b00111100,
                                      0b00011000, 0b00000000};
 
-const unsigned char IMAGES[][8] = {
+const unsigned char IMAGES_UP_BOTTOM[][8] = {
     // letter I
     {0b00000000, 0b00111100, 0b00011000, 0b00011000, 0b00011000, 0b00011000,
      0b00011000, 0b00111100},
@@ -165,7 +165,44 @@ const unsigned char IMAGES[][8] = {
     //  0b00110000, 0b00111100},
 };
 
-const unsigned char IMAGES_LEN = sizeof(IMAGES) / 8;
+const unsigned char IMAGES_UB_LEN = sizeof(IMAGES_UP_BOTTOM) / 8;
+
+const unsigned char IMAGES_LEFT_RIGHT[][8] = {
+    {0b11111111, 0b00000000, 0b00000000, 0b00000011, 0b00000011, 0b00000000,
+     0b00000000, 0b11111111},
+    {0b11111111, 0b00000000, 0b00000000, 0b00000110, 0b00000110, 0b00000000,
+     0b00000000, 0b11111111},
+    {0b11111111, 0b00000000, 0b00000000, 0b00001100, 0b00001100, 0b00000000,
+     0b00000000, 0b11111111},
+    {0b11111111, 0b00000000, 0b00000000, 0b00011000, 0b00011000, 0b00000000,
+     0b00000000, 0b11111111},
+    {0b11111111, 0b00000000, 0b00000000, 0b00110000, 0b00110000, 0b00000000,
+     0b00000000, 0b11111111},
+    {0b11111111, 0b00000000, 0b00000000, 0b01100000, 0b01100000, 0b00000000,
+     0b00000000, 0b11111111},
+    {0b11111111, 0b00000000, 0b00000000, 0b11000000, 0b11000000, 0b00000000,
+     0b00000000, 0b11111111},
+
+    {0b11111111, 0b00000000, 0b00000000, 0b10000000, 0b10000000, 0b00000000,
+     0b00000000, 0b11111111},
+
+    {0b11111111, 0b00000000, 0b00000000, 0b11000000, 0b11000000, 0b00000000,
+     0b00000000, 0b11111111},
+    {0b11111111, 0b00000000, 0b00000000, 0b01100000, 0b01100000, 0b00000000,
+     0b00000000, 0b11111111},
+    {0b11111111, 0b00000000, 0b00000000, 0b00110000, 0b00110000, 0b00000000,
+     0b00000000, 0b11111111},
+    {0b11111111, 0b00000000, 0b00000000, 0b00011000, 0b00011000, 0b00000000,
+     0b00000000, 0b11111111},
+    {0b11111111, 0b00000000, 0b00000000, 0b00001100, 0b00001100, 0b00000000,
+     0b00000000, 0b11111111},
+    {0b11111111, 0b00000000, 0b00000000, 0b00000011, 0b00000011, 0b00000000,
+     0b00000000, 0b11111111},
+    {0b11111111, 0b00000000, 0b00000000, 0b00000001, 0b00000001, 0b00000000,
+     0b00000000, 0b11111111},
+};
+
+const unsigned char IMAGES_LR_LEN = sizeof(IMAGES_LEFT_RIGHT) / 8;
 
 void enable_u4_74hc138() {
   // U4 74HC138 enable
@@ -305,12 +342,14 @@ void show_digit_image() {
     case 5:
     case 6:
       enable_led_row(DIGIT_IMAGE_IDX);
-      P0 = 0xff ^ bit_revert(IMAGES[SHOW_IMAGE_ROUND][DIGIT_IMAGE_IDX]);
+      P0 = 0xff ^
+           bit_revert(IMAGES_UP_BOTTOM[SHOW_IMAGE_ROUND][DIGIT_IMAGE_IDX]);
       DIGIT_IMAGE_IDX++;
       break;
     case 7:
       enable_led_row(DIGIT_IMAGE_IDX);
-      P0 = 0xff ^ bit_revert(IMAGES[SHOW_IMAGE_ROUND][DIGIT_IMAGE_IDX]);
+      P0 = 0xff ^
+           bit_revert(IMAGES_UP_BOTTOM[SHOW_IMAGE_ROUND][DIGIT_IMAGE_IDX]);
       DIGIT_IMAGE_IDX = 0;
       break;
     default:
@@ -335,15 +374,15 @@ void show_digit_image_dynamic_up_to_bottom() {
       enable_led_row(DIGIT_IMAGE_IDX);
       row = (SHOW_IMAGE_ROUND + DIGIT_IMAGE_IDX) / 8;
       col = SHOW_IMAGE_ROUND + DIGIT_IMAGE_IDX - row * 8;
-      // 使用 row % IMAGES_LEN 消除循环完一个周期后的衔接问题
-      P0 = 0xff ^ bit_revert(IMAGES[row % IMAGES_LEN][col]);
+      // 使用 row % IMAGES_UB_LEN 消除循环完一个周期后的衔接问题
+      P0 = 0xff ^ bit_revert(IMAGES_UP_BOTTOM[row % IMAGES_UB_LEN][col]);
       DIGIT_IMAGE_IDX++;
       break;
     case 7:
       enable_led_row(DIGIT_IMAGE_IDX);
       row = (SHOW_IMAGE_ROUND + DIGIT_IMAGE_IDX) / 8;
       col = SHOW_IMAGE_ROUND + DIGIT_IMAGE_IDX - row * 8;
-      P0 = 0xff ^ bit_revert(IMAGES[row % IMAGES_LEN][col]);
+      P0 = 0xff ^ bit_revert(IMAGES_UP_BOTTOM[row % IMAGES_UB_LEN][col]);
       DIGIT_IMAGE_IDX = 0;
       break;
     default:
@@ -351,7 +390,34 @@ void show_digit_image_dynamic_up_to_bottom() {
   }
 }
 
-_Noreturn void show_image_on_led_matrix() {
+void show_digit_image_dynamic_left_to_right() {
+  turn_off_led_matrix();
+  unsigned char row = 0, col = 0;
+  switch (DIGIT_IMAGE_IDX) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+      enable_led_row(DIGIT_IMAGE_IDX);
+      P0 = 0xff ^
+           bit_revert(IMAGES_LEFT_RIGHT[SHOW_IMAGE_ROUND][DIGIT_IMAGE_IDX]);
+      DIGIT_IMAGE_IDX++;
+      break;
+    case 7:
+      enable_led_row(DIGIT_IMAGE_IDX);
+      P0 = 0xff ^
+           bit_revert(IMAGES_LEFT_RIGHT[SHOW_IMAGE_ROUND][DIGIT_IMAGE_IDX]);
+      DIGIT_IMAGE_IDX = 0;
+      break;
+    default:
+      break;
+  }
+}
+
+_Noreturn void show_image_on_led_matrix_up_bottom() {
   enable_u4_74hc138();
   P0 = 0xff;
 
@@ -360,7 +426,22 @@ _Noreturn void show_image_on_led_matrix() {
     turn_off_led_matrix();
     delay_ms(10);
     SHOW_IMAGE_ROUND++;
-    if (SHOW_IMAGE_ROUND >= IMAGES_LEN * 8) {
+    if (SHOW_IMAGE_ROUND >= IMAGES_LR_LEN * 8) {
+      SHOW_IMAGE_ROUND = 0;
+    }
+  }
+}
+
+_Noreturn void show_image_on_led_matrix_left_right() {
+  enable_u4_74hc138();
+  P0 = 0xff;
+
+  while (1) {
+    run_in_every_ms(100, &show_digit_image_dynamic_left_to_right);
+    turn_off_led_matrix();
+    delay_ms(10);
+    SHOW_IMAGE_ROUND++;
+    if (SHOW_IMAGE_ROUND >= IMAGES_LR_LEN) {
       SHOW_IMAGE_ROUND = 0;
     }
   }
@@ -369,5 +450,6 @@ _Noreturn void show_image_on_led_matrix() {
 _Noreturn void turn_on_led_matrix() {
   // turn_on_led_matrix_normal();
   // turn_on_led_matrix_with_interrupt(100);
-  show_image_on_led_matrix();
+  // show_image_on_led_matrix_up_bottom();
+  show_image_on_led_matrix_left_right();
 }

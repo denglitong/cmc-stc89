@@ -13,6 +13,19 @@
 #define ADDR_3 P1_3
 #define EN_LED P1_4
 
+#define LED_SIZE 8
+#define LED_LINE P0
+#define LED_SINGLE P0_0
+
+#define KEY_IN_4 P2_7
+#define KEY_IN_3 P2_6
+#define KEY_IN_2 P2_5
+#define KEY_IN_1 P2_4
+#define KEY_OUT_1 P2_3
+#define KEY_OUT_2 P2_2
+#define KEY_OUT_3 P2_1
+#define KEY_OUT_4 P2_0
+
 typedef void(VoidFun)();
 
 void enable_u3_74hc138();

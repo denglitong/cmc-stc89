@@ -37,6 +37,6 @@ add_custom_target(
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_executable(Z_DUMMY_TARGET ${SRC_LIST} src/led.c src/led.h src/common.c src/common.h src/tube.c src/tube.h src/led_matrix.c src/led_matrix.h)
+add_executable(Z_DUMMY_TARGET ${SRC_LIST} src/led.c src/led.h src/common.c src/common.h src/tube.c src/tube.h src/led_matrix.c src/led_matrix.h src/key.c src/key.h)
 
 target_link_libraries(Z_DUMMY_TARGET m)

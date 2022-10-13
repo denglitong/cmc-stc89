@@ -8,10 +8,6 @@
 
 #include "common.h"
 
-#define LED_SIZE 8
-#define LED_LINE P0
-#define LED_SINGLE P0_0
-
 // 教学板子 LED_SINGLE 总开关
 void turn_on_master_switch() {
   // 74HC138 芯片，即 38 译码器，
@@ -22,7 +18,7 @@ void turn_on_master_switch() {
   ADDR_3 = 1;  // G1 高电平
   EN_LED = 0;  // G2低电平（G2A, G2B）
 
-  // 110 LEDS6 为低电平，三极管导通，LED 总开发打开
+  // 110 LEDS6 为低电平，三极管导通，LED 总开关打开
   ADDR_2 = 1;
   ADDR_1 = 1;
   ADDR_0 = 0;
@@ -40,31 +36,36 @@ _Noreturn void flash_single_led() {
   }
 }
 
+void turn_on_all_leds() { LED_LINE = 0x00; }
+
+void turn_off_all_leds() { LED_LINE = 0xff; }
+
+void turn_on_single_led(unsigned char i) {
+  // turn on the i-th led from low-high
+  LED_LINE ^= 0x01 << i;
+}
+
 _Noreturn void flash_serial_leds() {
-  // initialize leds, all turn off
-  LED_LINE = 0xff;
   short i = 0;
   while (1) {
     for (i = 0; i < 2; ++i) {
-      LED_LINE = 0x00;
+      turn_on_all_leds();
       delay_ms(200);
-      LED_LINE = 0xff;
+      turn_off_all_leds();
       delay_ms(300);
     }
     for (i = 0; i < LED_SIZE; ++i) {
       // turn on the i-th led from low-high
-      LED_LINE ^= 0x01 << i;
+      turn_on_single_led(i);
       delay_ms(100);
-      // turn off
-      LED_LINE = 0xff;
+      turn_off_all_leds();
       delay_ms(100);
     }
     for (i = LED_SIZE - 1; i >= 0; --i) {
       // turn on the i-th led from high-low
-      LED_LINE ^= 0x01 << i;
+      turn_on_single_led(i);
       delay_ms(100);
-      // turn off
-      LED_LINE = 0xff;
+      turn_off_all_leds();
       delay_ms(100);
     }
   }

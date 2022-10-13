@@ -283,19 +283,20 @@ _Noreturn void turn_on_led_matrix_with_interrupt(
 // 中断函数不需要调用，达到中断时自动进入
 // 定时器 T1 产生溢出时触发一个 T1 中断，对应函数标号为 3
 // NOTE: 中断函数需要在 header 文件中声明进行声明才能生效！
-// void InterruptTime1() __interrupt(3) {
-// // setup TH0 TL0 initial value, each interrupt(Timer0 overflow) will pass
-// 1ms TH1 = 0xFC; TL1 = 0x67;
-//
-// INTERRUPT_COUNT++;
-// if (INTERRUPT_COUNT >= INTERRUPT_MILLIS) {  // 1ms * INTERRUPT_MILLIS
-//   INTERRUPT_COUNT = 0;
-//   INTERRUPT_FLAG = 1;
-// }
-//
-// enable_led_row(digit_row());
-// enable_led_column(digit_col());
-// }
+void InterruptTime1_led_matrix() __interrupt(3) {
+  // setup TH0 TL0 initial value, each interrupt(Timer0 overflow) will pass 1ms
+  TH1 = 0xFC;
+  TL1 = 0x67;
+
+  INTERRUPT_COUNT++;
+  if (INTERRUPT_COUNT >= INTERRUPT_MILLIS) {  // 1ms * INTERRUPT_MILLIS
+    INTERRUPT_COUNT = 0;
+    INTERRUPT_FLAG = 1;
+  }
+
+  enable_led_row(digit_row());
+  enable_led_column(digit_col());
+}
 
 unsigned char bit_revert(unsigned char a) {
   unsigned char r = 0;

@@ -30,6 +30,6 @@ _Noreturn void turn_on_tube_with_func_pointer();
 
 _Noreturn void turn_on_tube_with_interrupt(unsigned int interrupt_millis);
 
-void InterruptTime0() __interrupt(1);
+// void InterruptTime0_tube() __interrupt(1);
 
 #endif  // MCU_STC89_TUBE_H

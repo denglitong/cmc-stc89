@@ -9,15 +9,8 @@
 #include "common.h"
 
 // 教学板子 LED_SINGLE 总开关
-void turn_on_master_switch() {
-  // 74HC138 芯片，即 38 译码器，
-  // LED 总开关对应的引脚为 74HC138 的输出口 LEDS6
-
-  // 74HC138 芯片 的使能引脚，
-  // G1 高电平 G2 低电平，才能启动 74HC138 芯片的 3-8 译码电路
-  ADDR_3 = 1;  // G1 高电平
-  EN_LED = 0;  // G2低电平（G2A, G2B）
-
+void turn_on_led_master_switch() {
+  enable_u3_74hc138();
   // 110 LEDS6 为低电平，三极管导通，LED 总开关打开
   ADDR_2 = 1;
   ADDR_1 = 1;
@@ -42,6 +35,16 @@ void turn_off_all_leds() { LED_LINE = 0xff; }
 
 void turn_on_single_led(unsigned char i) {
   // turn on the i-th led from low-high
+  LED_LINE &= ~(0x01 << i);
+}
+
+void turn_off_single_led(unsigned char i) {
+  // turn off the i-th led from low-high
+  LED_LINE |= 0x01 << i;
+}
+
+void switch_single_led(unsigned char i) {
+  // switch the i-th led from low-high
   LED_LINE ^= 0x01 << i;
 }
 
@@ -72,7 +75,7 @@ _Noreturn void flash_serial_leds() {
 }
 
 _Noreturn void turn_on_led() {
-  turn_on_master_switch();
+  turn_on_led_master_switch();
   // flash_single_led();
   flash_serial_leds();
 }

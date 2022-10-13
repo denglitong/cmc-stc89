@@ -16,6 +16,10 @@
 #define LED_SIZE 8
 #define LED_LINE P0
 #define LED_SINGLE P0_0
+#define LED_0 P0_0
+#define LED_1 P0_1
+#define LED_2 P0_2
+#define LED_3 P0_3
 
 #define KEY_IN_4 P2_7
 #define KEY_IN_3 P2_6

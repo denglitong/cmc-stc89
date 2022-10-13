@@ -4,8 +4,6 @@
 
 #include "led_matrix.h"
 
-#include <stdint.h>
-
 #include "common.h"
 #include "tube.h"
 

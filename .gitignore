@@ -19,3 +19,13 @@ CTestTestfile.cmake
 _deps
 
 .idea/
+
+*.asm
+*.ihx
+*.lk
+*.lst
+*.map
+*.mem
+*.rel
+*.rst
+*.sym

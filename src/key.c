@@ -10,7 +10,7 @@
 unsigned char KEY_STATUS = 1;
 unsigned char PREV_KEY_STATUS = 1;
 
-_Noreturn void get_input_key_switch_led_with_delay() {
+_Noreturn void get_single_input_key_with_delay() {
   turn_on_led_master_switch();
   turn_off_all_leds();
 
@@ -32,7 +32,7 @@ _Noreturn void get_input_key_switch_led_with_delay() {
   }
 }
 
-_Noreturn void get_input_key_switch_led_with_interrupt() {
+_Noreturn void get_single_input_key_with_interrupt() {
   turn_on_led_master_switch();
   turn_off_all_leds();
 
@@ -78,6 +78,6 @@ void InterruptTime0_key() __interrupt(1) {
 }
 
 _Noreturn void show_key_input() {
-  // get_input_key_switch_led_with_delay();
-  get_input_key_switch_led_with_interrupt();
+  // get_single_input_key_with_delay();
+  get_single_input_key_with_interrupt();
 }

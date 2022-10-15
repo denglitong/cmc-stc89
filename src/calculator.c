@@ -10,6 +10,16 @@
 #define ADDR_3 P1_3
 #define EN_LED P1_4
 
+#define KEY_IN_4 P2_7
+#define KEY_IN_3 P2_6
+#define KEY_IN_2 P2_5
+#define KEY_IN_1 P2_4
+
+#define KEY_OUT_1 P2_3
+#define KEY_OUT_2 P2_2
+#define KEY_OUT_3 P2_1
+#define KEY_OUT_4 P2_0
+
 #define LED_LINE P0
 #define DOT 10
 
@@ -20,13 +30,25 @@
 #define EQUAL 'E'
 #define CLEAR 'F'
 
-typedef void(VoidFun)(unsigned long);
+unsigned char KEY_STATUS[4][4] = {
+    {1, 1, 1, 1},
+    {1, 1, 1, 1},
+    {1, 1, 1, 1},
+    {1, 1, 1, 1},
+};
 
-unsigned char MATRIX_KEY_STATUS[4][4] = {
+unsigned char PREV_KEY_STATUS[4][4] = {
     {1, 1, 1, 1},
     {1, 1, 1, 1},
     {1, 1, 1, 1},
     {1, 1, 1, 1},
+};
+
+unsigned char KEY_BUFFER[4][4] = {
+    {0xFF, 0xFF, 0xFF, 0xFF},
+    {0xFF, 0xFF, 0xFF, 0xFF},
+    {0xFF, 0xFF, 0xFF, 0xFF},
+    {0xFF, 0xFF, 0xFF, 0xFF},
 };
 
 unsigned char LED_CHAR[] = {
@@ -58,6 +80,17 @@ void enable_tube(unsigned char i) {
   P1 |= i;
 }
 
+void show_digit(unsigned char i) {
+  // P0 = 0xff ^ digit_seg(i);
+  // use array buffer to accelerate since the value is not changed in run-time.
+  P0 = LED_CHAR[i];
+}
+
+unsigned char KeyCodeMap[4][4] = {{0x31, 0x32, 0x33, 0x26},
+                                  {0x34, 0x35, 0x36, 0x25},
+                                  {0x37, 0x38, 0x39, 0x28},
+                                  {0x30, 0x1B, 0x0D, 0x27}};
+
 /**
  * map 4 * 4 input keys to [0-9A-F]
  * keyboard layout:
@@ -69,27 +102,27 @@ void enable_tube(unsigned char i) {
  * @param key_col
  * @return
  */
-unsigned char input_digit(unsigned char key_row, unsigned char key_col) {
-  static unsigned char digit_buffer[4][4] = {
+unsigned char key_digit_map(unsigned char key_row, unsigned char key_col) {
+  static unsigned char key_code_map[4][4] = {
       {1, 2, 3, ADD},
       {4, 5, 6, MULTIPLE},
       {7, 8, 9, MINUS},
-      {0, EQUAL, CLEAR, DIVIDE},
+      {0, CLEAR, EQUAL, DIVIDE},
   };
-  return digit_buffer[key_row][key_col];
+  return key_code_map[key_row][key_col];
 }
 
 void update_led_buffer(unsigned long digit) {
   signed char i = 0;
   unsigned char buf[6];
-  do {
-    buf[i++] = digit % 10;
+  for (i = 0; i < 6; ++i) {
+    buf[i] = digit % 10;
     digit /= 10;
-  } while (digit > 0);
+  }
 
   for (i = 5; i >= 1; i--) {
     if (buf[i] == 0) {
-      buf[i] = 0xFF;
+      LED_BUFF[i] = 0xFF;
     } else {
       break;
     }
@@ -101,7 +134,7 @@ void update_led_buffer(unsigned long digit) {
 
 void react_to_input_digit(unsigned char input_key) {
   // 结果
-  static unsigned long RESULT = 0;
+  static unsigned long RESULT_1 = 0, RESULT_2 = 0;
   // + - * / 操作数
   static unsigned long OPERAND = 0;
   // 操作符缓存
@@ -121,17 +154,51 @@ void react_to_input_digit(unsigned char input_key) {
       update_led_buffer(OPERAND);
       break;
     case ADD:
-      RESULT += OPERAND;
+      RESULT_1 = OPERAND;
       OPERAND = 0;
-      update_led_buffer(RESULT);
+      OPERATOR_BUFF = ADD;
+      update_led_buffer(RESULT_1);
+      break;
+    case MINUS:
+      RESULT_1 = OPERAND;
+      OPERAND = 0;
+      OPERATOR_BUFF = MINUS;
+      update_led_buffer(RESULT_1);
+      break;
+    case MULTIPLE:
+      RESULT_2 = OPERAND;
+      OPERAND = 0;
+      OPERATOR_BUFF = MULTIPLE;
+      update_led_buffer(RESULT_2);
+      break;
+    case DIVIDE:
+      RESULT_2 = OPERAND;
+      OPERAND = 0;
+      OPERATOR_BUFF = DIVIDE;
+      update_led_buffer(RESULT_2);
       break;
     case EQUAL:
-      RESULT += OPERAND;
+      if (OPERATOR_BUFF == ADD) {
+        RESULT_1 += OPERAND;
+        update_led_buffer(RESULT_1);
+      }
+      if (OPERATOR_BUFF == MINUS) {
+        RESULT_1 -= OPERAND;
+        update_led_buffer(RESULT_1);
+      }
+      if (OPERATOR_BUFF == MULTIPLE) {
+        RESULT_2 *= OPERAND;
+        update_led_buffer(RESULT_2);
+      }
+      if (OPERATOR_BUFF == DIVIDE) {
+        RESULT_2 /= OPERAND;
+        update_led_buffer(RESULT_2);
+      }
       OPERAND = 0;
-      update_led_buffer(RESULT);
       break;
     case CLEAR:
-      RESULT = 0;
+      RESULT_1 = 0;
+      RESULT_2 = 0;
       OPERAND = 0;
       update_led_buffer(0);
       break;
@@ -155,26 +222,17 @@ _Noreturn void get_matrix_input_key_with_interrupt() {
 
   LED_BUFF[0] = LED_CHAR[0];
 
-  unsigned char key_out = 0, key_in = 0, digit = 0;
-  static unsigned char MATRIX_PREV_KEY_STATUS[4][4] = {
-      {1, 1, 1, 1},
-      {1, 1, 1, 1},
-      {1, 1, 1, 1},
-      {1, 1, 1, 1},
-  };
-
   while (1) {
-    for (key_out = 0; key_out < 4; ++key_out) {
-      for (key_in = 0; key_in < 4; ++key_in) {
-        if (MATRIX_PREV_KEY_STATUS[key_out][key_in] !=
-            MATRIX_KEY_STATUS[key_out][key_in]) {
-          // 这里结合 key_out, key_in 就可以知道是按下了哪个按键
-          if (MATRIX_KEY_STATUS[key_out][key_in] == 0) {
-            digit = input_digit(key_out, key_in);
+    unsigned char i = 0, j = 0, digit = 0;
+    for (i = 0; i < 4; ++i) {
+      for (j = 0; j < 4; ++j) {
+        if (PREV_KEY_STATUS[i][j] != KEY_STATUS[i][j]) {
+          // 这里结合 i, j 就可以知道是弹起了哪个按键
+          if (PREV_KEY_STATUS[i][j] != 0) {
+            digit = key_digit_map(i, j);
             react_to_input_digit(digit);
           }
-          MATRIX_PREV_KEY_STATUS[key_out][key_in] =
-              MATRIX_KEY_STATUS[key_out][key_in];
+          PREV_KEY_STATUS[i][j] = KEY_STATUS[i][j];
         }
       }
     }
@@ -182,33 +240,50 @@ _Noreturn void get_matrix_input_key_with_interrupt() {
 }
 
 void scan_keyboard() {
-  static unsigned short MATRIX_KEY_BUFFER[4][4] = {
-      {0xFF, 0xFF, 0xFF, 0xFF},
-      {0xFF, 0xFF, 0xFF, 0xFF},
-      {0xFF, 0xFF, 0xFF, 0xFF},
-      {0xFF, 0xFF, 0xFF, 0xFF},
-  };
+  static unsigned char keyout = 0;
 
-  // matrix key input
-  unsigned char key_out = 0, key_in = 0, key_in_i;
-  for (key_out = 0; key_out < 4; ++key_out) {
-    // enable KeyOut_i
-    P2 &= (0xF0 | ~((1 << (3 - key_out))));
-    for (key_in = 0; key_in < 4; ++key_in) {
-      // get KeyIn_i
-      key_in_i = (P2 >> (4 + key_in)) & 1;
-      MATRIX_KEY_BUFFER[key_out][key_in] =
-          (MATRIX_KEY_BUFFER[key_out][key_in] << 1) | key_in_i;
-      if (MATRIX_KEY_BUFFER[key_out][key_in] == 0x0000) {
-        MATRIX_KEY_STATUS[key_out][key_in] = 0;
-      } else if (MATRIX_KEY_BUFFER[key_out][key_in] == 0xFFFF) {
-        MATRIX_KEY_STATUS[key_out][key_in] = 1;
-      }
+  KEY_BUFFER[keyout][0] = (KEY_BUFFER[keyout][0] << 1) | KEY_IN_1;
+  KEY_BUFFER[keyout][1] = (KEY_BUFFER[keyout][1] << 1) | KEY_IN_2;
+  KEY_BUFFER[keyout][2] = (KEY_BUFFER[keyout][2] << 1) | KEY_IN_3;
+  KEY_BUFFER[keyout][3] = (KEY_BUFFER[keyout][3] << 1) | KEY_IN_4;
+
+  for (unsigned char i = 0; i < 4; ++i) {
+    if (KEY_BUFFER[keyout][i] == 0x00) {
+      KEY_STATUS[keyout][i] = 0;
+    } else if (KEY_BUFFER[keyout][i] == 0xFF) {
+      KEY_STATUS[keyout][i] = 1;
     }
+  }
+
+  keyout++;
+  keyout = keyout & 0x03;
+
+  switch (keyout) {
+    case 0:
+      KEY_OUT_1 = 0;  // enable current keyout
+      KEY_OUT_4 = 1;  // disable previous keyout
+      break;
+    case 1:
+      KEY_OUT_2 = 0;
+      KEY_OUT_1 = 1;
+      break;
+    case 2:
+      KEY_OUT_3 = 0;
+      KEY_OUT_2 = 1;
+      break;
+    case 3:
+      KEY_OUT_4 = 0;
+      KEY_OUT_3 = 1;
+      break;
+    default:
+      break;
   }
 }
 
+void turn_off_all_segs() { P0 = 0xff; }
+
 void flush_led_buffer() {
+  turn_off_all_segs();
   static unsigned char TUBE_IDX = 0;
   switch (TUBE_IDX) {
     case 0:
@@ -224,6 +299,8 @@ void flush_led_buffer() {
       enable_tube(TUBE_IDX);
       P0 = LED_BUFF[TUBE_IDX];
       TUBE_IDX = 0;
+      break;
+    default:
       break;
   }
 }

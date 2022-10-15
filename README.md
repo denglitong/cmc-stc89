@@ -39,7 +39,7 @@ $ which sdcc
 2. 编译
 
 ```bash
-sdcc main.c
+/usr/local/bin/sdcc --model-large src/calculator.c && stcgal -P stc89 -p /dev/tty.wchusbserial14220 calculator.ihx
 ```
 
 3. 确认串口地址
